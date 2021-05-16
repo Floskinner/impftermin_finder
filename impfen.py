@@ -1,7 +1,6 @@
 """Checken ob ein Impftermin verfuegbar ist
 """
 import sys
-import os
 import time
 import logging
 import argparse
@@ -58,10 +57,10 @@ def init_argument_parser() -> argparse.ArgumentParser:
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=textwrap.dedent("""\
                                             Ein normaler Aufruf kann zB folgendermasen sein:
-                                            - .\Check_Impftermin.exe --NOTuserinteractive -c "XXXX-XXXX-XXXX" -p "88045" -b "Baden-Württemberg"
-                                            - .\Check_Impftermin.exe --NOTuserinteractive -c "XXXX-XXXX-XXXX" -p "88045" -b "Baden-Württemberg" --wait 5
-                                            - .\Check_Impftermin.exe --NOTuserinteractive -c "XXXX-XXXX-XXXX" -p "88045" -b "Baden-Württemberg" --soundpath "D:\i\love\meccas.mp3"
-                                            - .\Check_Impftermin.exe --NOTuserinteractive -c "XXXX-XXXX-XXXX" -p "88045" -b "Baden-Württemberg" --pushsaferCode "XXXXXXXXXXXXXXXXX" """))
+                                            - .\\Check_Impftermin.exe --NOTuserinteractive -c "XXXX-XXXX-XXXX" -p "88045" -b "Baden-Württemberg"
+                                            - .\\Check_Impftermin.exe --NOTuserinteractive -c "XXXX-XXXX-XXXX" -p "88045" -b "Baden-Württemberg" --wait 5
+                                            - .\\Check_Impftermin.exe --NOTuserinteractive -c "XXXX-XXXX-XXXX" -p "88045" -b "Baden-Württemberg" --soundpath "D:\\i\\love\\meccas.mp3"
+                                            - .\\Check_Impftermin.exe --NOTuserinteractive -c "XXXX-XXXX-XXXX" -p "88045" -b "Baden-Württemberg" --pushsaferCode "XXXXXXXXXXXXXXXXX" """))
 
     parser.add_argument("--NOTuserinteractive",
                         help="Wird dies mit angegeben, wird NICHT in der cmd nach den erforderlichen Parameter gefragt",
@@ -106,6 +105,10 @@ def init_argument_parser() -> argparse.ArgumentParser:
                         type=int,
                         default=120)
 
+    parser.add_argument("--debug",
+                        help="Speichert zusaetzlich screenshots zum debuggen",
+                        action='store_true')
+
     return parser
 
 
@@ -124,21 +127,19 @@ def get_arguments_from_user() -> list:
 
 
 def play_sound(path: str, anzahl: int = 3):
-    for counter in range(anzahl):
+    while anzahl:
         playsound(path)
+        anzahl -= 1
 
 
-def print_countdown(seconds: int, message: str = "Erneut versuchen in ..."):
-    for second in range(seconds):
-        nachricht = f"{message} {seconds - second}"
-        clear = " "
+def print_countdown(seconds: int, message: str = "Erneut versuchen in..."):
 
-        print(nachricht, end="\r")
+    while seconds:
+        mins, secs = divmod(seconds, 60)
+        timer = '{} {:02d}:{:02d} min'.format(message, mins, secs)
+        print(timer, end="\r")
         time.sleep(1)
-
-        for chars in range(len(nachricht)):
-            clear = clear + " "
-        print(clear, end="\r")
+        seconds -= 1
 
 
 def impfzentrum_waehlen(bundesland: str, plz: str, driver: webdriver.Chrome):
@@ -172,11 +173,12 @@ def vermittlungscode_eingeben(code: str, driver: webdriver.Chrome):
     counter = 0
 
     while driver.page_source.find("Fehler") != -1:
+        counter += 1
         fehler = driver.find_element_by_xpath("//span[contains(text(),'Fehler')]")
-        logging.debug(f"Fehler Nr: {counter+1} - {fehler.text}")
+        logging.debug("Fehler Nr: %s - %s", counter, fehler.text)
 
         if counter > 5:
-            logging.debug(f"Exception StuckedException wird geworfen - Versuch Nr {counter}")
+            logging.debug("Exception StuckedException wird geworfen - Versuch Nr %s", counter)
             raise StuckedException
 
         print_countdown(30)
@@ -191,7 +193,6 @@ def vermittlungscode_eingeben(code: str, driver: webdriver.Chrome):
         suchen_button = WebDriverWait(driver, 20).until(expected_conditions.element_to_be_clickable((By.XPATH, "//button[contains(text(),'suchen')]")))
         suchen_button.click()
 
-        counter += 1
         print_countdown(3)
 
 
@@ -255,6 +256,7 @@ def main():
     pushsafer_code = arguments.pushsaferCode
     wait = arguments.wait
     zyklus = arguments.zyklus
+    debug = arguments.debug
 
     url = "https://www.impfterminservice.de/impftermine"
 
@@ -277,15 +279,15 @@ def main():
 
     # --- Start Nachricht ---
     logging.info("=== START ===")
-    logging.info(f"Code: {code}")
-    logging.info(f"PLZ: {plz}")
-    logging.info(f"Bundesland: {bundesland}")
-    logging.info(f"Treiber: {driver_path}")
-    logging.info(f"Minimiert: {minimized}")
-    logging.info(f"Sound Pfad: {sound}")
-    logging.info(f"Warte auf Seite: {wait} sek.")
-    logging.info(f"Zyklus: {zyklus} sek.")
-    logging.info(f"url: {url}")
+    logging.info("Code: %s", code)
+    logging.info("PLZ: %s", plz)
+    logging.info("Bundesland: %s", bundesland)
+    logging.info("Treiber: %s", driver_path)
+    logging.info("Minimiert: %s", minimized)
+    logging.info("Sound Pfad: %s", sound)
+    logging.info("Warte auf Seite: %s sek.", wait)
+    logging.info("Zyklus: %s sek.", zyklus)
+    logging.info("url: %s", url)
     logging.info("=============")
 
     while True:
@@ -313,10 +315,12 @@ def main():
         # --- Fehlerbehandlung wenn Element nicht gefunden worden ist ---
         except NoSuchElementException as error:
             if driver.page_source.find("Warteraum") != -1:
-                logging.warning(f"Seite befindet sich im Warteraum - Pause von {zyklus}sek wird eingelegt")
+                logging.warning("Seite befindet sich im Warteraum - Pause von %s sek wird eingelegt", zyklus)
             else:
-                create_screenshot(driver, "debug_NoSuchElementException")
-                logging.warning(f"Element zum klicken konnte nicht gefunden werden, bitte prüfen - Pause von {zyklus}sek wird eingelegt")
+                if debug:
+                    create_screenshot(driver, "debug_NoSuchElementException")
+
+                logging.warning("Element zum klicken konnte nicht gefunden werden, bitte prüfen - Pause von %s sek wird eingelegt", zyklus)
 
             logging.debug("Error message: ", exc_info=error)
             driver.close()
@@ -330,8 +334,10 @@ def main():
             print_countdown(60*5)
 
         except (ElementClickInterceptedException, TimeoutException) as error:
+            if debug:
+                create_screenshot(driver, "debug_ElementClickInterceptedException")
+
             logging.info("Element zum klicken konnte nicht gefunden werden")
-            create_screenshot(driver, "debug_ElementClickInterceptedException")
             logging.debug("Fehler: ", exc_info=error)
             print_countdown(zyklus)
 
@@ -341,16 +347,20 @@ def main():
 
         # --- Beenden wenn es ein unbekannter Fehler ist ---
         except Exception as error:
+            if debug:
+                create_screenshot(driver, "debug_allgemeine_Exception")
+
             logging.critical("Unerwarteter Fehler!", exc_info=error)
-            create_screenshot(driver, "debug_allgemeine_Exception")
             driver.quit()
             print_countdown(60*5, "Starte neu in...")
 
         # --- Seiten konnten erfolgreich aufgerufen werden. Checken ob Termin verfügbar ---
         else:
             if driver.page_source.find("keine Termine") == -1:
-                create_screenshot(driver, "debug_termin_gefunden")
-                logging.info(f"Termin gefunden! - {plz}")
+                if debug:
+                    create_screenshot(driver, "debug_termin_gefunden")
+
+                logging.info("Termin gefunden! - %s", plz)
 
                 if pushsafer_code:
                     send_push_nachricht(f"Termine verfügbar!!! - {plz}", pushsafer_code)
@@ -364,7 +374,7 @@ def main():
 
             else:
                 driver.close()
-                logging.info(f"Kein Termin gefunden - Browser geschlossen - erneuter Versuch in {zyklus} Sekunden")
+                logging.info("Kein Termin gefunden - Browser geschlossen - erneuter Versuch in %s Sekunden", zyklus)
                 print_countdown(zyklus)
 
 
