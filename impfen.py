@@ -123,28 +123,6 @@ def get_arguments_from_user() -> list:
     return arguments
 
 
-def restart_programm(arguments: argparse.Namespace):
-    logging.info("========= Restart Programm =========")
-
-    args = list()
-    args.append(str(sys.argv[0]))
-    args.append("--NOTuserinteractive")
-    for key, value in vars(arguments).items():
-        if key == "NOTuserinteractive":
-            continue
-        elif isinstance(value, bool):
-            if value:
-                args.append(f"--{key}")
-
-        elif value is not None:
-            args.append(f"--{key}")
-            args.append(str(value))
-
-    logging.debug(f"Params: {args}")
-    os.execv(sys.argv[0], args)
-    sys.exit(0)
-
-
 def play_sound(path: str, anzahl: int = 3):
     for counter in range(anzahl):
         playsound(path)
@@ -350,7 +328,6 @@ def main():
             logging.info("Längere Pause von 5min wird eingelegt um das Problem zu beheben")
             driver.quit()
             print_countdown(60*5)
-            # restart_programm(arguments)
 
         except (ElementClickInterceptedException, TimeoutException) as error:
             logging.info("Element zum klicken konnte nicht gefunden werden")
@@ -368,7 +345,6 @@ def main():
             create_screenshot(driver, "debug_allgemeine_Exception")
             driver.quit()
             print_countdown(60*5, "Starte neu in...")
-            # restart_programm(arguments)
 
         # --- Seiten konnten erfolgreich aufgerufen werden. Checken ob Termin verfügbar ---
         else:
