@@ -229,6 +229,15 @@ def termin_suchen(driver: webdriver.Chrome):
 def accept_cooki(driver: webdriver.Chrome):
     driver.find_element_by_xpath("//a[contains(@class, 'cookies-info-close')]").click()
 
+def check_queue(driver: webdriver.Chrome):
+    queue_cookie = driver.get_cookie("akavpwr_User_allowed")
+    if queue_cookie:
+        logging.info("Im Warteraum, Seite neu laden...")
+        queue_cookie["name"] = "akavpau_User_allowed"
+        driver.add_cookie(queue_cookie)
+
+        # Seite neu laden
+        driver.refresh()
 
 def main():
     """
@@ -301,12 +310,23 @@ def main():
 
         # --- Starte Aufrufe der Webseiten
         try:
+            # Startseite
             driver.get(url)
             print_countdown(wait, "Warte auf Seite... ")
+
+            # Impfzentrum waehlen
             impfzentrum_waehlen(bundesland, plz, driver)
             print_countdown(wait, "Warte auf Seite... ")
+
+            # evtl. Warteraum skippen
+            check_queue(driver)
+            print_countdown(wait, "Warte auf Seite... ")
+
+            # Code eingeben
             vermittlungscode_eingeben(code, driver)
             print_countdown(wait, "Warte auf Seite... ")
+
+            # Termin suchen
             termin_suchen(driver)
             print_countdown(wait+15, "Warte auf Seite... ")
 
