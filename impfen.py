@@ -288,6 +288,7 @@ def main():
     logging.info("Warte auf Seite: %s sek.", wait)
     logging.info("Zyklus: %s sek.", zyklus)
     logging.info("url: %s", url)
+    logging.info("debug: %s", debug)
     logging.info("=============")
 
     while True:
