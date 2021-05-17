@@ -322,8 +322,8 @@ def main():
                     create_screenshot(driver, "debug_NoSuchElementException")
 
                 logging.warning("Element zum klicken konnte nicht gefunden werden, bitte prüfen - Pause von %s sek wird eingelegt", zyklus)
+                logging.debug("Error message: ", exc_info=error)
 
-            logging.debug("Error message: ", exc_info=error)
             driver.close()
             print_countdown(zyklus)
 
