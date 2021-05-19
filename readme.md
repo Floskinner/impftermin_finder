@@ -120,6 +120,21 @@ Wurde ein Termin gefunden, wird ein der angegebene Ton 3 mal abgespielt (siehe *
 
 Durch das Projekt bin ich auch dazu gekommen meine eigene Cloud und Wordpress in meinem Heimnetz aufzusetzten. Daher ist hier auch eine etwas [schönere Anleitung](https://wordpress.floskinner.ddnss.de/impftermin-automatisch-reservieren) mit Bildchen :)
 
+# Requirements
+
+- Python 3 (getestet mit Python 3.9)
+- pip oder pipenv (zur Installation der Python-Module)
+
+Installation der notwendigen Python-Module mit pip:
+```bash
+pip3 install -r requirements.txt
+```
+
+Installation der notwendigen Python-Module mit pipenv:
+```bash
+pipenv install
+```
+
 # Zum Abschluss...
 
 Bitte missbraucht mein Program nicht. Ich habe es erstellt, um selber etwas zu lernen und um andere zu helfen. Nicht um i welchen fremden ein Tool zu geben die sich damit Termine besorgen und diese auf eBay verkaufen :(
