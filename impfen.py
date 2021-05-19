@@ -153,47 +153,76 @@ def impfzentrum_waehlen(bundesland: str, plz: str, driver: webdriver.Chrome):
     submit_button.submit()
 
 
-def vermittlungscode_eingeben(code: str, driver: webdriver.Chrome):
-    actions = webdriver.ActionChains(driver)
+def vermittlungscode_eingeben(code: str, driver: webdriver.Chrome, wait: int):
+    # Cookies aktzeptieren
     accept_cooki(driver)
-    code_vorhanden = driver.find_element_by_xpath("//span[contains(text(),'Ja')]")
 
+    # Action chain fuer spaeter
+    actions = webdriver.ActionChains(driver)
+
+    # Vermittlungscode bereits vorhanden -> ja
+    # Warte auf evtl. Warteraum 1h - 60 * 60 sekunden
+    code_vorhanden_xpath = "//span[contains(text(),'Ja')]"
+    code_vorhanden = WebDriverWait(driver, 60 * 60).until(expected_conditions.element_to_be_clickable((By.XPATH, code_vorhanden_xpath)))
     code_vorhanden.click()
 
-    suchen_button = driver.find_element_by_xpath("//button[contains(text(),'suchen')]")
+    # Auswahl des ersten Code-Input-Feldes
+    input_xpath = "/html/body/app-root/div/app-page-its-login/div/div/div[2]/app-its-login-user/" \
+                    "div/div/app-corona-vaccination/div[3]/div/div/div/div[1]/app-corona-vaccination-yes/" \
+                    "form[1]/div[1]/label/app-ets-input-code/div/div[1]/label/input"
+    input_field = WebDriverWait(driver, 1).until(expected_conditions.element_to_be_clickable((By.XPATH, input_xpath)))
+    input_field.click()
 
+    # Vermittlungscode eingeben
     time.sleep(1)
     actions.send_keys(code)
     actions.perform()
 
+    # Auf die Seite klicken
+    actions.move_by_offset(1, 1)
+    actions.click()
+    actions.move_by_offset(2, 2)
+    actions.click()
+    actions.perform()
+
+    # Termin suchen
+    suchen_button_xpath = "//button[contains(text(),'suchen')]"
+    suchen_button = WebDriverWait(driver, wait).until(expected_conditions.element_to_be_clickable((By.XPATH, suchen_button_xpath)))
     suchen_button.click()
 
     time.sleep(1)
 
     counter = 0
 
+    # "Fehler" auf der Seite
     while driver.page_source.find("Fehler") != -1:
         counter += 1
+
+        # Fehlernachricht schreiben
         fehler = driver.find_element_by_xpath("//span[contains(text(),'Fehler')]")
         logging.debug("Fehler Nr: %s - %s", counter, fehler.text)
 
+        # Nach 5 versuchen Exception werfen
         if counter > 5:
             logging.debug("Exception StuckedException wird geworfen - Versuch Nr %s", counter)
             raise StuckedException
 
         print_countdown(30)
 
+        # Auf die Seite klicken
         actions.move_by_offset(1, 1)
         actions.click()
         actions.move_by_offset(2, 2)
         actions.click()
-
         actions.perform()
 
-        suchen_button = WebDriverWait(driver, 20).until(expected_conditions.element_to_be_clickable((By.XPATH, "//button[contains(text(),'suchen')]")))
+        # Termin suchen
+        suchen_button_xpath = "//button[contains(text(),'suchen')]"
+        suchen_button = WebDriverWait(driver, wait).until(expected_conditions.element_to_be_clickable((By.XPATH, suchen_button_xpath)))
         suchen_button.click()
 
         print_countdown(3)
+
 
 
 def click_bundesland(bundesland: str, driver: webdriver.Chrome):
@@ -232,7 +261,7 @@ def accept_cooki(driver: webdriver.Chrome):
 def check_queue(driver: webdriver.Chrome):
     queue_cookie = driver.get_cookie("akavpwr_User_allowed")
     if queue_cookie:
-        logging.info("Im Warteraum, Seite neu laden...")
+        logging.debug("Warteraum - Try skipping")
         queue_cookie["name"] = "akavpau_User_allowed"
         driver.add_cookie(queue_cookie)
 
@@ -323,7 +352,7 @@ def main():
             print_countdown(wait, "Warte auf Seite... ")
 
             # Code eingeben
-            vermittlungscode_eingeben(code, driver)
+            vermittlungscode_eingeben(code, driver, wait)
             print_countdown(wait, "Warte auf Seite... ")
 
             # Termin suchen
@@ -344,7 +373,7 @@ def main():
                 logging.warning("Element zum klicken konnte nicht gefunden werden, bitte prüfen - Pause von %s sek wird eingelegt", zyklus)
                 logging.debug("Error message: ", exc_info=error)
 
-            driver.close()
+            driver.quit()
             print_countdown(zyklus)
 
         # --- Neustart wenn das Programm zu viele Anfragen hat ---
@@ -360,10 +389,12 @@ def main():
 
             logging.info("Element zum klicken konnte nicht gefunden werden")
             logging.debug("Fehler: ", exc_info=error)
+            driver.quit()
             print_countdown(zyklus)
 
         except KeyboardInterrupt as error:
             logging.info("Programm beenden", exc_info=error)
+            driver.quit()
             sys.exit(0)
 
         # --- Beenden wenn es ein unbekannter Fehler ist ---
