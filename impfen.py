@@ -18,10 +18,20 @@ from playsound import playsound
 
 
 class StuckedException(Exception):
+    """
+    Eigene Exception falls, es nicht weiter kommt
+    """
     pass
 
 
 def send_push_nachricht(message: str, pushsafer_code: str, title: str = "Termin Verfuegbar!"):
+    """Sendet mithilfe von Pushsafer eine Nachricht
+
+    Args:
+        message (str): Nachricht die in der App angezeigt werden soll
+        pushsafer_code (str): Key fuer das Profil
+        title (str, optional): Titel der Nachricht. Defaults to "Termin Verfuegbar!".
+    """
 
     # all
     device = "a"
@@ -53,6 +63,12 @@ def send_push_nachricht(message: str, pushsafer_code: str, title: str = "Termin 
 
 
 def init_argument_parser() -> argparse.ArgumentParser:
+    """Erstellen des Parsers mit allen Argumenten
+
+    Returns:
+        argparse.ArgumentParser: Fertig eingestellter Parser
+    """
+
     parser = argparse.ArgumentParser(description="Mithilfe von Chrome automatisch nach Termine suchen",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=textwrap.dedent("""\
@@ -113,10 +129,24 @@ def init_argument_parser() -> argparse.ArgumentParser:
 
 
 def create_screenshot(driver: webdriver.Chrome, name: str):
+    """Speichert einen Screenshot vom Browser
+
+    Args:
+        driver (webdriver.Chrome): webdriver
+        name (str): Name des Screenshots, angehaengt wird das anktuelle Datum mit minuten
+    """
+
     driver.save_screenshot(f".\\{name}_{time.strftime('%d-%m_%H-%M-%S')}.png")
 
 
 def get_arguments_from_user() -> list:
+    """Holt interaktiv vom User die notwendigen Informationen
+    Impf-Code, Plz, Bundesland
+
+    Returns:
+        list: Liste fuer den Argument Parser
+    """
+
     print("Für weitere Konfiguration bitte das Programm direkt über eine Konsole starten.\nMit -h können alle Argumente aufgelistet werden\n")
     code = input("Impf-Code: ")
     plz = input("PLZ: ")
@@ -127,12 +157,26 @@ def get_arguments_from_user() -> list:
 
 
 def play_sound(path: str, anzahl: int = 3):
+    """Spielt einen Ton ab
+
+    Args:
+        path (str): Pfad zur Sounddatei
+        anzahl (int, optional): Wie oft soll der Ton abgespielt werden. Defaults to 3.
+    """
+
     while anzahl:
         playsound(path)
         anzahl -= 1
 
 
 def print_countdown(seconds: int, message: str = "Erneut versuchen in..."):
+    """Gibt in einer Zeile einen entsprechenden Coundown aus im Format:
+    {message} {min}:{sek} min
+
+    Args:
+        seconds (int): Wie lange soll gewartet werden
+        message (str, optional): Nachricht vor dem Countdown. Defaults to "Erneut versuchen in...".
+    """
 
     while seconds:
         mins, secs = divmod(seconds, 60)
@@ -143,10 +187,21 @@ def print_countdown(seconds: int, message: str = "Erneut versuchen in..."):
 
 
 def impfzentrum_waehlen(bundesland: str, plz: str, driver: webdriver.Chrome):
+    """Wahelt das Impfzentrum auf der Startseite aus
+
+    Args:
+        bundesland (str): Bundesland muss im Drop-Down Menue verfuegbar sein
+        plz (str): Plz des Impfzentrums
+        driver (webdriver.Chrome): webdriver
+    """
+
+    # Button holen
     submit_button = driver.find_element_by_xpath("/html/body/app-root/div/app-page-its-center/div/div[2]/div/div/div/div/form/div[4]/button")
 
+    # Cookies aktzeptieren
     accept_cooki(driver)
 
+    # Richtige Daten auswaehlen
     click_bundesland(bundesland, driver)
     click_impfzentrum(plz, driver)
 
@@ -154,6 +209,17 @@ def impfzentrum_waehlen(bundesland: str, plz: str, driver: webdriver.Chrome):
 
 
 def vermittlungscode_eingeben(code: str, driver: webdriver.Chrome, wait: int):
+    """Gibt den Impf-Code auf der entsprechenden Seite ein
+
+    Args:
+        code (str): Impf-Code
+        driver (webdriver.Chrome): webdriver
+        wait (int): Wie lange soll gewartet werden, bis die erste Aktionen ausgefuerht werden
+
+    Raises:
+        StuckedException: Eigene Exception die geworfden wird, wenn der "suchen" Button einen Fehler wirft
+    """
+
     # Cookies aktzeptieren
     accept_cooki(driver)
 
@@ -168,8 +234,8 @@ def vermittlungscode_eingeben(code: str, driver: webdriver.Chrome, wait: int):
 
     # Auswahl des ersten Code-Input-Feldes
     input_xpath = "/html/body/app-root/div/app-page-its-login/div/div/div[2]/app-its-login-user/" \
-                    "div/div/app-corona-vaccination/div[3]/div/div/div/div[1]/app-corona-vaccination-yes/" \
-                    "form[1]/div[1]/label/app-ets-input-code/div/div[1]/label/input"
+        "div/div/app-corona-vaccination/div[3]/div/div/div/div[1]/app-corona-vaccination-yes/" \
+        "form[1]/div[1]/label/app-ets-input-code/div/div[1]/label/input"
     input_field = WebDriverWait(driver, 1).until(expected_conditions.element_to_be_clickable((By.XPATH, input_xpath)))
     input_field.click()
 
@@ -224,8 +290,14 @@ def vermittlungscode_eingeben(code: str, driver: webdriver.Chrome, wait: int):
         print_countdown(3)
 
 
-
 def click_bundesland(bundesland: str, driver: webdriver.Chrome):
+    """Waehle das entsprechende Bundesland im Drop-Down Menue auf der Startseite
+
+    Args:
+        bundesland (str): Entsprechendes Bundesland des Impfzentrums
+        driver (webdriver.Chrome): webdriver
+    """
+
     bundeslaender_waehlen = driver.find_element_by_xpath(
         "/html/body/app-root/div/app-page-its-center/div/div[2]/div/div/div/div/form/div[3]/app-corona-vaccination-center/div[1]/label/span[2]/span[1]/span")
     bundeslaender_waehlen.click()
@@ -239,6 +311,13 @@ def click_bundesland(bundesland: str, driver: webdriver.Chrome):
 
 
 def click_impfzentrum(plz: str, driver: webdriver.Chrome):
+    """Waehle das Impfzentrum anhand der Plz im Drop-Down Menue auf der Startseite
+
+    Args:
+        plz (str): Plz des Impfzentrums
+        driver (webdriver.Chrome): webdriver
+    """
+
     impfzentren_waehlen = driver.find_element_by_xpath(
         "/html/body/app-root/div/app-page-its-center/div/div[2]/div/div/div/div/form/div[3]/app-corona-vaccination-center/div[2]/label/span[2]/span[1]/span")
     impfzentren_waehlen.click()
@@ -252,14 +331,35 @@ def click_impfzentrum(plz: str, driver: webdriver.Chrome):
 
 
 def termin_suchen(driver: webdriver.Chrome):
+    """Auf suchen Button klicken
+
+    Args:
+        driver (webdriver.Chrome): webdriver
+    """
+
     driver.find_element_by_xpath("//button[contains(text(),'suchen')]").click()
 
 
 def accept_cooki(driver: webdriver.Chrome):
+    """Cookies mithilfe der class cookies-info-close akzeptieren
+
+    Args:
+        driver (webdriver.Chrome): webdriver
+    """
+
     driver.find_element_by_xpath("//a[contains(@class, 'cookies-info-close')]").click()
 
+
 def check_queue(driver: webdriver.Chrome):
+    """Schaut ob man im Wartebereich ist und versucht diesen zu skippen
+
+    Args:
+        driver (webdriver.Chrome): webdriver
+    """
+    # Cookie holen
     queue_cookie = driver.get_cookie("akavpwr_User_allowed")
+
+    # Neuer Cookie erstellen falls vorhanden
     if queue_cookie:
         logging.debug("Warteraum - Try skipping")
         queue_cookie["name"] = "akavpau_User_allowed"
@@ -268,14 +368,19 @@ def check_queue(driver: webdriver.Chrome):
         # Seite neu laden
         driver.refresh()
 
+
 def main():
     """
     Main
+
+    Startet das ganze Programm
     """
 
     # --- Setup Chrome Optionen ---
     options = webdriver.ChromeOptions()
+    # Browser wird nach beenden des Programmes nicht beendet
     options.add_experimental_option("detach", True)
+    # Falsche Warnemldung unterdruecken (Bluetooth error)
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
 
     # --- Setup Argumente ---
@@ -334,7 +439,7 @@ def main():
         driver = webdriver.Chrome(driver_path, options=options)
 
         if minimized:
-            logging.debug("Minimize Funktion außer Betrieb")
+            logging.debug("Minimize Funktion ausser Betrieb")
             # driver.minimize_window()
 
         # --- Starte Aufrufe der Webseiten
@@ -383,6 +488,7 @@ def main():
             driver.quit()
             print_countdown(60*5)
 
+        # --- Fehler werden von WebDriverWait erzeugt ---
         except (ElementClickInterceptedException, TimeoutException) as error:
             if debug:
                 create_screenshot(driver, "debug_ElementClickInterceptedException")
