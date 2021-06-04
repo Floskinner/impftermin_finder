@@ -1,3 +1,8 @@
+# Nehmt lieber vaccipy (https://github.com/iamnotturner/vaccipy)
+An dem Projekt arbeite ich nun auch selbst und habe das GUI mit entwickelt :)
+(https://github.com/iamnotturner/vaccipy)
+
+
 # Was was macht das Programm?
 Es checkt so lange in einem gewissen Intervall (Standard 2min), ob ein Impftermin verfügbar ist, bis eben einer gefunden wurde uns spielt anschließend eine Sounddatei ab.
 Zusätzlich besteht die Option, eine Pushbenachrichtigung auf sein Handy zu bekommen (hierfür wird Pushsafer verwendet).
@@ -9,12 +14,6 @@ Als Buchungseite wird [www.impfterminservice.de](https://www.impfterminservice.d
 # Warum?
 
 Ich bin ein ausgelernter Anwendungsentwickler und haben vor kurzem ein Duales Studium begonnen. Ich wollte mal ein Programm entwicklen, was wirklich einen Nutzen hat und promt kamen meinem Großeltern auf mich zu und haben gefragt ob ich nicht einen Termin für sie besorgen kann. Daher kam dann der gedanke zum Programm, da ich nicht 24/7 auf dieser Webseite einen Termin suchen wollte.
-
-# Ist euch das Datum egal?
-
-Natürlich bin ich nicht der einzige der so ein Art Programm erstellt hat. Wenn euch der Termin egal ist und ihr einfach nur geipft werden wollt, dann empfehle ich euch [vaccipy](https://github.com/iamnotturner/vaccipy)!
-
-Ist auch deutlich Professioneller als meins hier :D
 
 # Anwendung
 
